@@ -1,0 +1,17 @@
+html, body {
+    height: 100%;
+    margin: 0;
+  }
+
+body{
+   
+    display: grid;
+    grid-template: 1fr 4.5fr 1fr/ 1fr 2.5fr 1fr;
+}
+.board{
+    grid-area: 2/2/3/3;
+    display: grid;
+    grid-template: repeat(15,1fr)/repeat(15,1fr);
+    gap: 8px;
+
+}
