@@ -1,6 +1,5 @@
 const gameBoardArray = []
 
-
 const player1 = {
 
     score : 0,
@@ -15,6 +14,8 @@ const player2 = {
     hand : ["","","","","","",""],
 
 }
+
+let currentPlayer = player1
 
 function tile (letter,pointValue){
 
@@ -87,7 +88,7 @@ const letterOccurrences = new Map([
 
 const keysArray = Array.from(letterOccurrences.keys());
 
-
+//Fills in all the gaps in a players hand and decrements letter occurrences accordingly
 function populateHand(player){
     for(let i = 0; i < 7; i++ ){
         let x = Math.floor(Math.random()*26)
@@ -109,6 +110,7 @@ for(let i = 0;i < 15;i++){
 
     for(let j = 0; j < 15;j++){
 
+
         gameBoardArray[i][j] = ""
 
     }
@@ -118,11 +120,110 @@ for(let i = 0;i < 15;i++){
 function playTile(player,tile,x,y){
     if(player.hand.includes(tile)){
         gameBoardArray[x][y] = tile
+        updateBoard()
+        for(let i = 0;i < player.hand.length; i++){
+            if(player.hand[i] === tile){
+                player.hand[i] = ""
+            }
+        }
     }
+}
+
+
+
+fetch('dictionary.txt')
+  .then(response => response.text())
+  .then(data => {
+    const wordsArray = data.split('\n');
+    console.log(wordsArray);
+  })
+  .catch(error => {
+    console.error('Error:', error);
+  });
+
+function checkWordValidity(startingPoint,endingPoint){
+
+}
+
+function outOfLetters(){
+    for(let i = 0; i < letterOccurrences.length; i++){
+        if(letterOccurrences.get(i) != 0){
+            return false
+        }
+    }
+    return true
 }
 
 populateHand(player1)
 populateHand(player2)
 
 
-playTile(player1,player1.hand[0],7,10)
+
+/////HTML stuff/////
+
+
+
+const handDiv = document.querySelector('.player-hand')
+const boardDiv = document.querySelector('.board')
+
+
+function drawBoard(){
+
+    for(let i = 0; i < gameBoardArray.length;i++){
+
+        for(let j = 0; j < gameBoardArray[i].length; j++){
+    
+            let tile = document.createElement('div')
+            tile.dataset.row = j
+            tile.dataset.column = i
+            tile.innerHTML = ''
+            tile.classList.add('tile')
+    
+            boardDiv.appendChild(tile)
+        }
+    }
+}
+
+function drawHand(player){
+
+    for(let i = 0; i < 6; i++){
+        if(player.hand[i] != ""){
+            tileInHand = document.createElement('div')
+            tileInHand.classList.add('letter')
+        }
+        
+
+    }
+}
+
+
+
+
+
+function updateBoard(){
+    
+
+    for(let i = 0; i < 15;i++){
+
+        for(let j = 0; j < 15; j++){
+            if(gameBoardArray[i][j])
+            boardDiv.childNodes[i+15*j].innerText = gameBoardArray[i][j].letter
+
+
+        }
+    }
+}
+
+
+
+function updateHand(){
+
+}
+
+
+
+/////HTML stuff/////
+drawBoard()
+
+
+
