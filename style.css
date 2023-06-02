@@ -25,6 +25,22 @@ button{
     font-weight: bold;
     box-shadow: 0 9px rgb(165, 165, 165);
 }
+.recall-button{
+    width: 100px;
+    height: 40px;
+    margin-top: 16px;
+    font-size: 20px;
+    border: none;
+    border-radius: 2px;
+    background-color: rgb(245, 100, 100);
+    color: white;
+    font-family: Arial, Helvetica, sans-serif;
+    font-weight: bold;
+    box-shadow: 0 9px rgb(165, 165, 165);
+}
+.recall-button:hover{
+    background-color: rgb(189, 52, 52);
+}
 button:hover{
     cursor: pointer;
  

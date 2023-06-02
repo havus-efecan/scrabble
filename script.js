@@ -1,6 +1,6 @@
 const gameBoardArray = []
 let lettersPlayed = 0
-
+let prevHand
 const player1 = {
 
     score : 0,
@@ -109,6 +109,8 @@ function populateHand(player){
         }
         
     }
+    prevHand = [...player.hand]
+
 }
 
 
@@ -153,7 +155,6 @@ fetch('dictionary.txt')
 
 
 populateHand(player1)
-populateHand(player2)
 
 
 
@@ -197,7 +198,7 @@ function drawBoard(){
                 playTile(currentPlayer,playIndex,row,column)
                 removeLetterFromHand(playIndex)
 
-                updateBoard(row,column)
+                updateBoard(row,column,true)
 
             })
     
@@ -205,6 +206,19 @@ function drawBoard(){
         }
     }
 }
+
+function clearBoard(){
+    for(let i = 0; i < gameBoardArray.length;i++){
+
+        for(let j = 0; j < gameBoardArray[i].length; j++){
+    
+            updateBoard(i,j,false)
+
+        }
+    }
+}
+
+
 
 function drawHand(player){
 
@@ -235,27 +249,66 @@ function removeLetterFromHand(index){
 }
 
 
-function updateBoard(row,column){
+function updateBoard(row,column,add){
 
 
     
     const tile = document.querySelector('[data-row="'+row+'"][data-column="'+column+'"]');
             
-                let addedTile = document.createElement('div')
-                addedTile.classList.add('occupiedTile')
-                addedTile.innerText = gameBoardArray[row][column].letter
-                tile.appendChild(addedTile)
+        if(add){
+            let addedTile = document.createElement('div')
+            addedTile.classList.add('occupiedTile')
+            addedTile.innerText = gameBoardArray[row][column].letter
+            tile.appendChild(addedTile)
+        } else {
+            
+            let tilesToRemove = tile.children
+            if(tilesToRemove.length != 0){
+                tile.removeChild(tilesToRemove[0])
+
+            }
+
+        }
+                
                
     
 }
 
 const submitButton = document.querySelector('button')
 submitButton.addEventListener('click',()=>{
-    populateHand(currentPlayer)
-    drawHand(currentPlayer)
+    
+    nextTurn()
 })
 
 
+const recallButton = document.querySelector('.recall-button')
+recallButton.addEventListener('click',recallLetters)
+
+
+function recallLetters(){
+    currentPlayer.hand = prevHand
+    drawHand(currentPlayer)
+
+    for(let i = 0; i < gameBoardArray.length;i++){
+
+        for(let j = 0; j < gameBoardArray[i].length; j++){
+            gameBoardArray[i][j] = ""
+        }
+    
+        clearBoard()
+
+
+}
+}
+
+
+
+function nextTurn(){
+    populateHand(currentPlayer)
+    drawHand(currentPlayer)
+}
+
+ 
 
 /////HTML stuff/////
 drawBoard()
