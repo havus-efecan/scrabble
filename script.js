@@ -1,4 +1,5 @@
 const gameBoardArray = []
+let turn = 0 
 let lettersPlayed = 0
 
 //prevHand is the hand of letters the current player had at the beginning of their current turn 
@@ -6,6 +7,9 @@ let prevHand
 
 //currentPlay is the set of tiles being placed by the current player before submittting
 let currentPlay = Array(7)
+
+//playedWord is an array representing the word currently being played
+let playedWord = []
 
 const player1 = {
 
@@ -22,6 +26,29 @@ const player2 = {
 
 }
 
+const wordFactory = (column,row,direction) => {
+
+    let word = ""
+
+    
+    while (gameBoardArray[column][row] != ""){
+        word += gameBoardArray[column][row].letter
+
+        switch(direction){
+            case 'left': column--
+            break;
+            case 'right': column++
+            break;
+            case 'up': row--
+            break;
+            case 'down': row++
+            break;
+        }
+    }
+
+    return {word}
+}
+
 let currentPlayer = player1
 
 function tile (letter,pointValue,row,column){
@@ -30,6 +57,7 @@ function tile (letter,pointValue,row,column){
     this.pointValue = pointValue
     this.row = row
     this.column = column
+
 
 }
 
@@ -156,12 +184,22 @@ function playTile(player,tileIndex,x,y){
     if(player.hand[tileIndex] != ""){
         gameBoardArray[x][y] = player.hand[tileIndex]
         currentPlay[tileIndex] = player.hand[tileIndex]
+        playedWord.push(player.hand[tileIndex])
 
         gameBoardArray[x][y].column = x
         gameBoardArray[x][y].row = y
 
+        let direction = adjacent(player.hand[tileIndex])
+        if (direction != false){
+            let newWord = wordFactory(x,y,direction).word
+
+        }
+
         player.hand[tileIndex] = ""
             
+    
+        
+
     }
 
     
@@ -317,12 +355,47 @@ function recallLetters(){
 
 
 function nextTurn(){
+
+    validateWord()
+
+    if(currentPlayer === player1){
+        currentPlayer = player2
+    } else {
+        currentPlayer = player1 
+    }
+
     currentPlay = Array(7)
     populateHand(currentPlayer)
     drawHand(currentPlayer)
 }
 
+
+
+function validateWord(){
+
+}
  
+function adjacent(tile){
+
+    
+
+    if(gameBoardArray[tile.column-1][tile.row] != ""){
+        return "right"
+    }
+    if(gameBoardArray[tile.column+1][tile.row] != ""){
+        return "left"
+    }
+    if(gameBoardArray[tile.column][tile.row-1] != ""){
+        return "up"
+    }
+    if(gameBoardArray[tile.column][tile.row+1] != ""){
+        return "down"
+    }
+
+    return false
+    
+}
+
 
 /////HTML stuff/////
 drawBoard()
