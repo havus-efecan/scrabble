@@ -1,6 +1,12 @@
 const gameBoardArray = []
 let lettersPlayed = 0
+
+//prevHand is the hand of letters the current player had at the beginning of their current turn 
 let prevHand
+
+//currentPlay is the set of tiles being placed by the current player before submittting
+let currentPlay = Array(7)
+
 const player1 = {
 
     score : 0,
@@ -18,10 +24,12 @@ const player2 = {
 
 let currentPlayer = player1
 
-function tile (letter,pointValue){
+function tile (letter,pointValue,row,column){
 
     this.letter = letter
     this.pointValue = pointValue
+    this.row = row
+    this.column = column
 
 }
 
@@ -85,33 +93,45 @@ const letterOccurrences = new Map([
   ]);
 
 
-
-
 const keysArray = Array.from(letterOccurrences.keys());
+
+
+//Adds a letter to the player.hand array at a specified index
+function addLetterToHand(player,index,tile){
+    if(lettersPlayed >= 100){
+        return
+    }
+
+    if(letterOccurrences.get(tile.letter) > 0){
+        letterOccurrences.set(tile.letter,letterOccurrences.get(tile.letter)-1)
+        player.hand[index] = tile
+    }
+
+}
+
+
+
 
 //Fills in all the gaps in a players hand and decrements letter occurrences accordingly
 function populateHand(player){
     for(let i = 0; i < 7; i++ ){
 
         while(player.hand[i] === ""){
-
-            if(lettersPlayed >= 100){
-                return
-            }
-
             let x = Math.floor(Math.random()*26)
-            let currentLetter = keysArray[x]
+            let newTile = new tile(keysArray[x],letterValues.get(keysArray[x]),-1,-1)
+            
 
-            if(letterOccurrences.get(currentLetter) > 0){
-                player.hand[i] = new tile(currentLetter,letterValues.get(keysArray[x]))
-                letterOccurrences.set(currentLetter,letterOccurrences.get(keysArray[x])-1)
-            }
+            addLetterToHand(player,i,newTile)
         }
         
     }
+
+
     prevHand = [...player.hand]
 
 }
+
+
 
 
 
@@ -135,9 +155,17 @@ function playTile(player,tileIndex,x,y){
     }
     if(player.hand[tileIndex] != ""){
         gameBoardArray[x][y] = player.hand[tileIndex]
+        currentPlay[tileIndex] = player.hand[tileIndex]
+
+        gameBoardArray[x][y].column = x
+        gameBoardArray[x][y].row = y
+
         player.hand[tileIndex] = ""
             
     }
+
+    
+
     lettersPlayed += 1
 }
 
@@ -196,9 +224,8 @@ function drawBoard(){
 
 
                 playTile(currentPlayer,playIndex,row,column)
-                removeLetterFromHand(playIndex)
-
-                updateBoard(row,column,true)
+                drawHand(currentPlayer)
+                addToBoard(row,column)
 
             })
     
@@ -207,16 +234,6 @@ function drawBoard(){
     }
 }
 
-function clearBoard(){
-    for(let i = 0; i < gameBoardArray.length;i++){
-
-        for(let j = 0; j < gameBoardArray[i].length; j++){
-    
-            updateBoard(i,j,false)
-
-        }
-    }
-}
 
 
 
@@ -225,7 +242,7 @@ function drawHand(player){
     let tileList = Array.from(document.querySelector('.player-hand').children)
 
     for(let i in tileList){
-        if(player.hand[i].letter != ""){
+        if(player.hand[i] != ""){
             tileList[i].classList.add("letter")
             tileList[i].draggable = 'true'
             
@@ -235,48 +252,48 @@ function drawHand(player){
                 e.dataTransfer.setData('text/plain', i);
    
             })
+
+            currentPlay.push()
+        } else {
+            tileList[i].classList.remove("letter")
+            tileList[i].classList.add("invisible")
+            tileList[i].draggable = 'false'
+            tileList[i].innerHTML = ""
+
+
         }        
     }
 }
 
 
-function removeLetterFromHand(index){
-    let tileList = Array.from(document.querySelector('.player-hand').children)
-    tileList[index].classList.remove("letter")
-    tileList[index].classList.add("invisible")
-
-    tileList[index].innerHTML = ""
-}
 
 
-function updateBoard(row,column,add){
 
-
-    
+function addToBoard(row,column){
     const tile = document.querySelector('[data-row="'+row+'"][data-column="'+column+'"]');
             
-        if(add){
             let addedTile = document.createElement('div')
             addedTile.classList.add('occupiedTile')
             addedTile.innerText = gameBoardArray[row][column].letter
-            tile.appendChild(addedTile)
-        } else {
             
-            let tilesToRemove = tile.children
-            if(tilesToRemove.length != 0){
-                tile.removeChild(tilesToRemove[0])
 
-            }
+            tile.appendChild(addedTile)
+  
+}
 
-        }
-                
-               
-    
+function removeFromBoard(row,column){
+    const tile = document.querySelector('[data-row="'+row+'"][data-column="'+column+'"]');
+
+            gameBoardArray[row][column] = ""
+            const letter = tile.children[0]
+            tile.removeChild(letter)
+
 }
 
 const submitButton = document.querySelector('button')
 submitButton.addEventListener('click',()=>{
     
+
     nextTurn()
 })
 
@@ -286,24 +303,21 @@ recallButton.addEventListener('click',recallLetters)
 
 
 function recallLetters(){
-    currentPlayer.hand = prevHand
+
+    for (i in currentPlay){
+        currentPlayer.hand[i] = currentPlay[i]
+        removeFromBoard(currentPlayer.hand[i].column,currentPlayer.hand[i].row)
+
+    }
+    currentPlay = Array(7)
     drawHand(currentPlayer)
-
-    for(let i = 0; i < gameBoardArray.length;i++){
-
-        for(let j = 0; j < gameBoardArray[i].length; j++){
-            gameBoardArray[i][j] = ""
-        }
-    
-        clearBoard()
-
-
 }
-}
+
 
 
 
 function nextTurn(){
+    currentPlay = Array(7)
     populateHand(currentPlayer)
     drawHand(currentPlayer)
 }
