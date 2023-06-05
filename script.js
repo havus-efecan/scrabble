@@ -1,6 +1,7 @@
 const gameBoardArray = []
 let turn = 0 
 let lettersPlayed = 0
+let lastCoord = []
 
 //prevHand is the hand of letters the current player had at the beginning of their current turn 
 let prevHand
@@ -31,7 +32,7 @@ const wordFactory = (column,row,direction) => {
     let word = ""
 
     
-    while (gameBoardArray[column][row] != ""){
+    while (column != -1 && row != -1 && gameBoardArray[column][row] != ""){
         word += gameBoardArray[column][row].letter
 
         switch(direction){
@@ -178,6 +179,11 @@ for(let i = 0;i < 15;i++){
 }
 
 function playTile(player,tileIndex,x,y){
+
+    eraseValidBorder()
+
+    lastCoord = [x,y]
+
     if( gameBoardArray[x][y] != ""){
         return
     }
@@ -189,9 +195,21 @@ function playTile(player,tileIndex,x,y){
         gameBoardArray[x][y].column = x
         gameBoardArray[x][y].row = y
 
-        let direction = adjacent(player.hand[tileIndex])
-        if (direction != false){
-            let newWord = wordFactory(x,y,direction).word
+        let vertDirection = adjacentVertical(player.hand[tileIndex])
+        let horDirection = adjacentHorizontal(player.hand[tileIndex])
+
+        if (vertDirection != false){
+            let newWord = reverseString(wordFactory(x,y,vertDirection).word)
+            if (validateWord(newWord)){
+                drawValidBorder(x,y,newWord,vertDirection)
+            }  
+
+        }
+        if (horDirection != false){
+            let newWord = reverseString(wordFactory(x,y,horDirection).word)
+            if (validateWord(newWord)){
+                drawValidBorder(x,y,newWord,horDirection)
+            }
 
         }
 
@@ -208,11 +226,11 @@ function playTile(player,tileIndex,x,y){
 }
 
 
-
+let wordsArray
 fetch('dictionary.txt')
   .then(response => response.text())
   .then(data => {
-    const wordsArray = data.split('\n');
+    wordsArray = data.split('\n');
     console.log(wordsArray);
   })
   .catch(error => {
@@ -261,6 +279,7 @@ function drawBoard(){
                 const playIndex = e.dataTransfer.getData('text/plain');
 
 
+               
                 playTile(currentPlayer,playIndex,row,column)
                 drawHand(currentPlayer)
                 addToBoard(row,column)
@@ -347,6 +366,7 @@ function recallLetters(){
         removeFromBoard(currentPlayer.hand[i].column,currentPlayer.hand[i].row)
 
     }
+    eraseValidBorder()
     currentPlay = Array(7)
     drawHand(currentPlayer)
 }
@@ -355,8 +375,6 @@ function recallLetters(){
 
 
 function nextTurn(){
-
-    validateWord()
 
     if(currentPlayer === player1){
         currentPlayer = player2
@@ -371,29 +389,135 @@ function nextTurn(){
 
 
 
-function validateWord(){
+function validateWord(word){
+
+    if(wordsArray.includes(word.toUpperCase())){
+        return true
+    }
+    return false
 
 }
  
-function adjacent(tile){
+function adjacentVertical(tile){
 
-    
+    const row = parseInt(tile.row)
+    const column = parseInt(tile.column)
 
-    if(gameBoardArray[tile.column-1][tile.row] != ""){
-        return "right"
-    }
-    if(gameBoardArray[tile.column+1][tile.row] != ""){
-        return "left"
-    }
-    if(gameBoardArray[tile.column][tile.row-1] != ""){
+    if(row != 0 && row != 14 && gameBoardArray[column][row-1] != ""  ){
         return "up"
     }
-    if(gameBoardArray[tile.column][tile.row+1] != ""){
+    if(row != 0 && row != 14 && gameBoardArray[column][row+1] != ""  ){
         return "down"
     }
 
     return false
     
+}
+
+function adjacentHorizontal(tile){
+
+    const row = parseInt(tile.row)
+    const column = parseInt(tile.column)
+
+
+
+    if(column != 0 && column != 14 && gameBoardArray[column-1][row] != ""  ){
+        return "left"
+    }
+    if(column != 0  && column != 14 && gameBoardArray[column+1][row] != "" ){
+        return "right"
+    }
+
+    return false
+}
+
+
+function reverseString(word){
+    let splitWord = word.split("")
+    let reverseArray = splitWord.reverse()
+    let joinArray = reverseArray.join("")
+    return joinArray
+}
+
+function drawValidBorder(column,row,word,direction){
+
+    column = parseInt(column)
+    row = parseInt(row)
+
+    const tile = boardDiv.children
+
+    if(direction === "up"){
+        tile[(row*15)+column].classList.add('validWordBottom')
+        tile[((row)*15)+column].classList.add('validWordVertical')
+    } else if(direction === "down"){
+        tile[(row*15)+column].classList.add('validWordTop')
+        tile[((row)*15)+column].classList.add('validWordVertical')
+    } else if(direction === "left"){
+        tile[(row*15)+column].classList.add('validWordRight')
+        tile[((row)*15)+column].classList.add('validWordHorizontal')
+    } else {
+        tile[(row*15)+column].classList.add('validWordLeft')
+        tile[((row)*15)+column].classList.add('validWordHorizontal')
+    }
+
+    for(let i = 0; i < word.length-2; i++){
+
+        if(direction === "up"){
+            row--
+            tile[((row)*15)+column].classList.add('validWordVertical')
+        } else if (direction === "down") {
+            tile[((row)*15)+column].classList.add('validWordVertical')
+            row++
+        } else if(direction === "left"){
+            column--
+
+            tile[((row)*15)+column].classList.add('validWordHorizontal')
+        } else {
+            column++
+
+            tile[((row)*15)+column].classList.add('validWordHorizontal')
+        }
+    }
+
+    if(direction === "up"){
+        row--
+        tile[((row)*15)+column].classList.add('validWordTop')
+        tile[((row)*15)+column].classList.add('validWordVertical')
+
+
+    } else if(direction === "down"){
+        row++
+        tile[((row)*15)+column].classList.add('validWordBottom')
+        tile[((row)*15)+column].classList.add('validWordVertical')
+
+    } else if(direction === "left"){
+        column--
+        tile[((row)*15)+column].classList.add('validWordLeft')
+        tile[((row)*15)+column].classList.add('validWordHorizontal')
+
+    } else {
+        column++
+        tile[((row)*15)+column].classList.add('validWordRight')
+        tile[((row)*15)+column].classList.add('validWordHorizontal')
+
+    }
+
+
+}
+
+function eraseValidBorder(){
+    let tiles = boardDiv.children
+
+    for(let i = 0;i< 225; i++){
+        console.log(i)
+        tiles[i].classList.remove('validWordRight')
+        tiles[i].classList.remove('validWordHorizontal')
+        tiles[i].classList.remove('validWordLeft')
+        tiles[i].classList.remove('validWordBottom')
+        tiles[i].classList.remove('validWordTop')
+        tiles[i].classList.remove('validWordVertical')
+
+    }
 }
 
 

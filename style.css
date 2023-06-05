@@ -133,4 +133,23 @@ button:active{
     border-radius: 6px;
 
 }
-
+.validWordVertical{
+    border-left: solid 4px green;
+    border-right: solid 4px green;
+}
+.validWordTop{
+    border-top:solid 4px green; ;
+}
+.validWordBottom{
+    border-bottom:solid 4px green; ;
+}
+.validWordHorizontal{
+    border-bottom: solid 4px green;
+    border-top:solid 4px green; ;
+}
+.validWordLeft{
+    border-left: solid 4px green;
+}
+.validWordRight{
+    border-right: solid 4px green;
+}
