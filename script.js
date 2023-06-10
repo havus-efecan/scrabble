@@ -2,6 +2,7 @@ const gameBoardArray = []
 let turn = 0 
 let lettersPlayed = 0
 let lastCoord = []
+let valid = false
 
 //prevHand is the hand of letters the current player had at the beginning of their current turn 
 let prevHand
@@ -30,10 +31,14 @@ const player2 = {
 const wordFactory = (column,row,direction) => {
 
     let word = ""
-
+    playedWord = []
+    let i = 0;
     
     while (column != -1 && row != -1 && gameBoardArray[column][row] != ""){
         word += gameBoardArray[column][row].letter
+
+        playedWord.push(word.charAt(i))
+        i++
 
         switch(direction){
             case 'left': column--
@@ -180,6 +185,13 @@ for(let i = 0;i < 15;i++){
 
 function playTile(player,tileIndex,x,y){
 
+    let leftValid = false
+    let rightValid = false
+    let upValid = false
+    let downValid = false
+
+    let playedTile = player.hand[tileIndex]
+
     eraseValidBorder()
 
     lastCoord = [x,y]
@@ -190,33 +202,109 @@ function playTile(player,tileIndex,x,y){
     if(player.hand[tileIndex] != ""){
         gameBoardArray[x][y] = player.hand[tileIndex]
         currentPlay[tileIndex] = player.hand[tileIndex]
-        playedWord.push(player.hand[tileIndex])
 
         gameBoardArray[x][y].column = x
         gameBoardArray[x][y].row = y
 
-        let vertDirection = adjacentVertical(player.hand[tileIndex])
-        let horDirection = adjacentHorizontal(player.hand[tileIndex])
+        let leftTrue = adjacentLeft(playedTile)
+        let rightTrue = adjacentRight(playedTile)
+        let upTrue = adjacentUp(playedTile)
+        let downTrue = adjacentDown(playedTile)
 
-        if (vertDirection != false){
-            let newWord = reverseString(wordFactory(x,y,vertDirection).word)
-            if (validateWord(newWord)){
-                drawValidBorder(x,y,newWord,vertDirection)
-            }  
+        vertDirection = leftTrue || rightTrue
+        horDirection = upTrue || downTrue
 
-        }
-        if (horDirection != false){
-            let newWord = reverseString(wordFactory(x,y,horDirection).word)
-            if (validateWord(newWord)){
-                drawValidBorder(x,y,newWord,horDirection)
+        let downWord
+        let upWord
+        let leftWord
+        let rightWord
+
+        let conJoinedWord
+        let conJoinFactory
+
+        if(leftTrue && rightTrue){
+            conJoinFactory = conjoinWords(x,y,"horizontal")
+           if (validateWord(conJoinFactory.conjoinedWord)){
+                leftValid = true
+                rightValid = true
+                conJoinedWord = conJoinFactory.conjoinedWord
+        
+           }
+        } else if(upTrue && downTrue){
+            if(validateWord(conJoinFactory.conjoinedWord)){
+                upValid = true
+                downValid = true
+                conJoinedWord = conJoinFactory.conjoinedWord
             }
+                
+        } else if (downTrue){
+            downWord = wordFactory(x,y,"down").word
+        
+                if (validateWord(downWord)){
+                    downValid = true
+                } 
+        } else if(upTrue){
 
+                upWord = wordFactory(x,y,"up").word
+                if (validateWord(reverseString(upWord))){
+                    upValid = true
+                    upWord = reverseString(upWord)
+                } 
+        } else if(leftTrue){
+
+                leftWord = wordFactory(x,y,"left").word
+                if(validateWord(reverseString(leftWord))){
+                leftValid = true
+                leftWord = reverseString(leftWord)
+            }
+        } else if (rightTrue){
+
+                rightWord = wordFactory(x,y,"right").word
+                if(validateWord(reverseString(rightWord))){
+                rightValid = true
+                }
         }
+
+        if(leftValid && rightValid){
+            drawValidBorder(conJoinFactory.column,conJoinFactory.row,conJoinedWord,"right")
+        } else if(upValid && downValid){
+            drawValidBorder(conJoinFactory.column,conJoinFactory.row,conJoinedWord,"down")
+        } else if(leftValid && upValid){
+            drawValidBorder(x,y,leftWord,"left")
+            drawValidBorder(x,y,upWord,"up")
+            eraseRedundantBorder(x,y,"left")
+            eraseRedundantBorder(x,y,"up")
+        } else if(rightValid && upValid){
+            drawValidBorder(x,y,rightWord,"right")
+            drawValidBorder(x,y,upWord,"up")
+            eraseRedundantBorder(x,y,"right")
+            eraseRedundantBorder(x,y,"up")
+        } else if(leftValid && downValid){
+            drawValidBorder(x,y,leftWord,"left")
+            drawValidBorder(x,y,downValid,"down")
+            eraseRedundantBorder(x,y,"left")
+            eraseRedundantBorder(x,y,"down")
+        } else if(rightValid && downValid){
+            drawValidBorder(x,y,vertWord,"right")
+            drawValidBorder(x,y,downValid,"down")
+            eraseRedundantBorder(x,y,"right")
+            eraseRedundantBorder(x,y,"down")
+        } else if(leftValid){
+            drawValidBorder(x,y,leftWord,"left")
+        }else if(rightValid){
+            drawValidBorder(x,y,rightWord,"right")
+        }else if(upValid){
+            drawValidBorder(x,y,upWord,"up")
+        }else if(downValid){
+            drawValidBorder(x,y,downWord,"down")
+        }
+
+        valid = upValid || downValid || leftValid || rightValid
 
         player.hand[tileIndex] = ""
             
     
-        
+
 
     }
 
@@ -279,7 +367,6 @@ function drawBoard(){
                 const playIndex = e.dataTransfer.getData('text/plain');
 
 
-               
                 playTile(currentPlayer,playIndex,row,column)
                 drawHand(currentPlayer)
                 addToBoard(row,column)
@@ -322,10 +409,6 @@ function drawHand(player){
     }
 }
 
-
-
-
-
 function addToBoard(row,column){
     const tile = document.querySelector('[data-row="'+row+'"][data-column="'+column+'"]');
             
@@ -347,11 +430,41 @@ function removeFromBoard(row,column){
 
 }
 
+function getWordPointValue(word){
+
+    let sum = 0
+
+    for (let i = 0; i < word.length;i++){
+        sum += letterValues.get(word[i]) 
+    }
+    return sum
+}
+
+function submitWord(word){
+    
+    currentPlayer.score += getWordPointValue(word)
+    if(currentPlayer === player1){
+        let scoreDisplay = document.querySelector(`.player1-score`)
+        scoreDisplay.innerHTML = `Player1: ${currentPlayer.score}`
+
+    } else {
+        let scoreDisplay = document.querySelector(`.player2-score`)
+        scoreDisplay.innerHTML = `Player2: ${currentPlayer.score}`
+    }
+
+}
+
+
+
+
 const submitButton = document.querySelector('button')
 submitButton.addEventListener('click',()=>{
     
-
-    nextTurn()
+    if(valid === true){
+        submitWord(playedWord)
+        nextTurn()
+    }
+    
 })
 
 
@@ -376,13 +489,17 @@ function recallLetters(){
 
 function nextTurn(){
 
+    eraseValidBorder()
     if(currentPlayer === player1){
         currentPlayer = player2
     } else {
         currentPlayer = player1 
     }
 
+
+
     currentPlay = Array(7)
+    playedWord = []
     populateHand(currentPlayer)
     drawHand(currentPlayer)
 }
@@ -398,38 +515,86 @@ function validateWord(word){
 
 }
  
-function adjacentVertical(tile){
+function adjacentUp(tile){
 
     const row = parseInt(tile.row)
     const column = parseInt(tile.column)
 
     if(row != 0 && row != 14 && gameBoardArray[column][row-1] != ""  ){
-        return "up"
-    }
-    if(row != 0 && row != 14 && gameBoardArray[column][row+1] != ""  ){
-        return "down"
+        return true
     }
 
     return false
     
 }
 
-function adjacentHorizontal(tile){
+function adjacentDown(tile){
 
     const row = parseInt(tile.row)
     const column = parseInt(tile.column)
 
+    if(row != 0 && row != 14 && gameBoardArray[column][row+1] != ""  ){
+        return true
+    }
 
+    return false
+    
+}
+
+function adjacentLeft(tile){
+
+    const row = parseInt(tile.row)
+    const column = parseInt(tile.column)
 
     if(column != 0 && column != 14 && gameBoardArray[column-1][row] != ""  ){
-        return "left"
-    }
-    if(column != 0  && column != 14 && gameBoardArray[column+1][row] != "" ){
-        return "right"
+        return true
     }
 
     return false
 }
+
+function adjacentRight(tile){
+
+    const row = parseInt(tile.row)
+    const column = parseInt(tile.column)
+
+    if(column != 0  && column != 14 && gameBoardArray[column+1][row] != "" ){
+        return true
+    }
+
+    return false
+}
+
+const conjoinWords = (column,row, direction) => {
+
+    column = parseInt(column)
+    row = parseInt(row)
+
+    let conjoinedWord
+
+    currentTile = gameBoardArray[column][row]
+
+    if(direction === "horizontal"){
+        while(currentTile != ""){
+            column--
+            currentTile = gameBoardArray[column][row]
+        }
+        conjoinedWord = wordFactory(column+1,row,"right").word
+        column++
+    } else if (direction === "vertical"){
+        while(currentTile != ""){
+            row--
+            currentTile = gameBoardArray[column][row]
+
+        }
+        conjoinedWord = wordFactory(column,row+1,"down").word
+        row++
+    }
+
+    return {conjoinedWord, column, row}
+
+}
+
 
 
 function reverseString(word){
@@ -470,11 +635,9 @@ function drawValidBorder(column,row,word,direction){
             row++
         } else if(direction === "left"){
             column--
-
             tile[((row)*15)+column].classList.add('validWordHorizontal')
         } else {
             column++
-
             tile[((row)*15)+column].classList.add('validWordHorizontal')
         }
     }
@@ -508,8 +671,10 @@ function drawValidBorder(column,row,word,direction){
 function eraseValidBorder(){
     let tiles = boardDiv.children
 
+  
+
+
     for(let i = 0;i< 225; i++){
-        console.log(i)
         tiles[i].classList.remove('validWordRight')
         tiles[i].classList.remove('validWordHorizontal')
         tiles[i].classList.remove('validWordLeft')
@@ -518,6 +683,16 @@ function eraseValidBorder(){
         tiles[i].classList.remove('validWordVertical')
 
     }
+}
+
+function eraseRedundantBorder(column,row,direction){
+    
+    column = parseInt(column)
+    row = parseInt(row)
+
+    let tiles = boardDiv.children
+    tile[((row)*15)+column].classList.remove(`validWord${direction}`)
+
 }
 
 
