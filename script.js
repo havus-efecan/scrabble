@@ -3,6 +3,8 @@ let turn = 0
 let lettersPlayed = 0
 let lastCoord = []
 let valid = false
+let lastRow
+let lastColumn
 
 //prevHand is the hand of letters the current player had at the beginning of their current turn 
 let prevHand
@@ -12,6 +14,9 @@ let currentPlay = Array(7)
 
 //playedWord is an array representing the word currently being played
 let playedWord = []
+
+//currentWords is an array of words currently being played
+let currentWords = []
 
 const player1 = {
 
@@ -228,6 +233,7 @@ function playTile(player,tileIndex,x,y){
                 leftValid = true
                 rightValid = true
                 conJoinedWord = conJoinFactory.conjoinedWord
+                currentWords.push(conJoinedWord)
         
            }
         } else if(upTrue && downTrue){
@@ -235,35 +241,42 @@ function playTile(player,tileIndex,x,y){
                 upValid = true
                 downValid = true
                 conJoinedWord = conJoinFactory.conjoinedWord
+                currentWords.push(conJoinedWord)
             }
                 
-        } else if (downTrue){
+        }  if (downTrue){
             downWord = wordFactory(x,y,"down").word
         
                 if (validateWord(downWord)){
+                    currentWords.push(downWord)
                     downValid = true
                 } 
-        } else if(upTrue){
+        }  if(upTrue){
 
                 upWord = wordFactory(x,y,"up").word
                 if (validateWord(reverseString(upWord))){
                     upValid = true
                     upWord = reverseString(upWord)
+                    currentWords.push(upWord)
                 } 
-        } else if(leftTrue){
+        }  if(leftTrue){
 
                 leftWord = wordFactory(x,y,"left").word
                 if(validateWord(reverseString(leftWord))){
                 leftValid = true
                 leftWord = reverseString(leftWord)
+                currentWords.push(leftWord)
             }
-        } else if (rightTrue){
+        } if (rightTrue){
 
                 rightWord = wordFactory(x,y,"right").word
-                if(validateWord(reverseString(rightWord))){
+                if(validateWord((rightWord))){
                 rightValid = true
+                currentWords.push(rightWord)
                 }
         }
+
+        valid = upValid || downValid || leftValid || rightValid
 
         if(leftValid && rightValid){
             drawValidBorder(conJoinFactory.column,conJoinFactory.row,conJoinedWord,"right")
@@ -273,34 +286,53 @@ function playTile(player,tileIndex,x,y){
             drawValidBorder(x,y,leftWord,"left")
             drawValidBorder(x,y,upWord,"up")
             eraseRedundantBorder(x,y,"left")
-            eraseRedundantBorder(x,y,"up")
+            eraseRedundantBorder(x,y,"top")
         } else if(rightValid && upValid){
             drawValidBorder(x,y,rightWord,"right")
             drawValidBorder(x,y,upWord,"up")
             eraseRedundantBorder(x,y,"right")
-            eraseRedundantBorder(x,y,"up")
+            eraseRedundantBorder(x,y,"top")
         } else if(leftValid && downValid){
             drawValidBorder(x,y,leftWord,"left")
             drawValidBorder(x,y,downValid,"down")
             eraseRedundantBorder(x,y,"left")
-            eraseRedundantBorder(x,y,"down")
+            eraseRedundantBorder(x,y,"bottom")
         } else if(rightValid && downValid){
-            drawValidBorder(x,y,vertWord,"right")
+            drawValidBorder(x,y,rightValid,"right")
             drawValidBorder(x,y,downValid,"down")
             eraseRedundantBorder(x,y,"right")
-            eraseRedundantBorder(x,y,"down")
+            eraseRedundantBorder(x,y,"bottom")
         } else if(leftValid){
-            drawValidBorder(x,y,leftWord,"left")
+            if(rightTrue || downTrue || upTrue){
+                valid = false
+                return
+            } else {
+                drawValidBorder(x,y,leftWord,"left")
+            }
         }else if(rightValid){
-            drawValidBorder(x,y,rightWord,"right")
-        }else if(upValid){
-            drawValidBorder(x,y,upWord,"up")
+            if(leftTrue || downTrue || upTrue){
+                valid = false
+                return
+            } else {
+                drawValidBorder(x,y,rightWord,"right")
+            }
+        }   else if(upValid){
+            if(leftTrue || rightTrue || downTrue){
+                valid = false
+                return
+                } else {
+                drawValidBorder(x,y,upWord,"up")
+            }
         }else if(downValid){
-            drawValidBorder(x,y,downWord,"down")
+            if(leftTrue || rightTrue || upTrue){
+                valid = false
+                return
+                } else {
+                drawValidBorder(x,y,downWord,"down")
+            }
         }
 
-        valid = upValid || downValid || leftValid || rightValid
-
+    
         player.hand[tileIndex] = ""
             
     
@@ -460,7 +492,14 @@ function submitWord(word){
 const submitButton = document.querySelector('button')
 submitButton.addEventListener('click',()=>{
     
+
+
+
     if(valid === true){
+
+        // for(let i = 0; i < currentWords.length;i++){
+
+        // }
         submitWord(playedWord)
         nextTurn()
     }
@@ -473,6 +512,8 @@ recallButton.addEventListener('click',recallLetters)
 
 
 function recallLetters(){
+
+    currentWords = []
 
     for (i in currentPlay){
         currentPlayer.hand[i] = currentPlay[i]
@@ -488,6 +529,9 @@ function recallLetters(){
 
 
 function nextTurn(){
+
+    currentWords = []
+
 
     eraseValidBorder()
     if(currentPlayer === player1){
@@ -613,56 +657,69 @@ function drawValidBorder(column,row,word,direction){
 
     if(direction === "up"){
         tile[(row*15)+column].classList.add('validWordBottom')
-        tile[((row)*15)+column].classList.add('validWordVertical')
+        tile[((row)*15)+column].classList.add('validWordLeft')
+        tile[((row)*15)+column].classList.add('validWordRight')
     } else if(direction === "down"){
         tile[(row*15)+column].classList.add('validWordTop')
-        tile[((row)*15)+column].classList.add('validWordVertical')
+        tile[((row)*15)+column].classList.add('validWordLeft')
+        tile[((row)*15)+column].classList.add('validWordRight')
     } else if(direction === "left"){
         tile[(row*15)+column].classList.add('validWordRight')
-        tile[((row)*15)+column].classList.add('validWordHorizontal')
+        tile[(row*15)+column].classList.add('validWordBottom')
+        tile[(row*15)+column].classList.add('validWordTop')
     } else {
         tile[(row*15)+column].classList.add('validWordLeft')
-        tile[((row)*15)+column].classList.add('validWordHorizontal')
+        tile[(row*15)+column].classList.add('validWordBottom')
+        tile[(row*15)+column].classList.add('validWordTop')
+
     }
 
     for(let i = 0; i < word.length-2; i++){
 
         if(direction === "up"){
             row--
-            tile[((row)*15)+column].classList.add('validWordVertical')
+            tile[((row)*15)+column].classList.add('validWordLeft')
+            tile[((row)*15)+column].classList.add('validWordRight')
+
         } else if (direction === "down") {
-            tile[((row)*15)+column].classList.add('validWordVertical')
+            tile[((row)*15)+column].classList.add('validWordLeft')
+            tile[((row)*15)+column].classList.add('validWordRight')
             row++
         } else if(direction === "left"){
             column--
-            tile[((row)*15)+column].classList.add('validWordHorizontal')
+            tile[((row)*15)+column].classList.add('validWordTop')
+            tile[((row)*15)+column].classList.add('validWordBottom')
+
         } else {
             column++
-            tile[((row)*15)+column].classList.add('validWordHorizontal')
-        }
+            tile[((row)*15)+column].classList.add('validWordTop')
+            tile[((row)*15)+column].classList.add('validWordBottom')        }
     }
 
     if(direction === "up"){
         row--
         tile[((row)*15)+column].classList.add('validWordTop')
-        tile[((row)*15)+column].classList.add('validWordVertical')
-
+        tile[((row)*15)+column].classList.add('validWordLeft')
+        tile[((row)*15)+column].classList.add('validWordRight')
 
     } else if(direction === "down"){
         row++
         tile[((row)*15)+column].classList.add('validWordBottom')
-        tile[((row)*15)+column].classList.add('validWordVertical')
+        tile[((row)*15)+column].classList.add('validWordLeft')
+        tile[((row)*15)+column].classList.add('validWordRight')
 
     } else if(direction === "left"){
         column--
         tile[((row)*15)+column].classList.add('validWordLeft')
-        tile[((row)*15)+column].classList.add('validWordHorizontal')
+        tile[((row)*15)+column].classList.add('validWordTop')
+        tile[((row)*15)+column].classList.add('validWordBottom')
+
 
     } else {
         column++
         tile[((row)*15)+column].classList.add('validWordRight')
-        tile[((row)*15)+column].classList.add('validWordHorizontal')
-
+        tile[((row)*15)+column].classList.add('validWordTop')
+        tile[((row)*15)+column].classList.add('validWordBottom')
     }
 
 
@@ -690,8 +747,11 @@ function eraseRedundantBorder(column,row,direction){
     column = parseInt(column)
     row = parseInt(row)
 
+    direction = direction.charAt(0).toUpperCase() + direction.slice(1);
+
+
     let tiles = boardDiv.children
-    tile[((row)*15)+column].classList.remove(`validWord${direction}`)
+    tiles[((row)*15)+column].classList.remove(`validWord${direction}`)
 
 }
 
