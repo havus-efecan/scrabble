@@ -233,10 +233,28 @@ function playTile(player,tileIndex,x,y){
                 leftValid = true
                 rightValid = true
                 conJoinedWord = conJoinFactory.conjoinedWord
-                currentWords.push(conJoinedWord)
+                currentWords.push(conJoinedWord)      
+            } 
+         } else  if(leftTrue){
+
+            leftWord = wordFactory(x,y,"left").word
+            if(validateWord(reverseString(leftWord))){
+            leftValid = true
+            leftWord = reverseString(leftWord)
+            currentWords.push(leftWord)
+            }
+        }   else if (rightTrue){
+
+            rightWord = wordFactory(x,y,"right").word
+            if(validateWord((rightWord))){
+            rightValid = true
+            currentWords.push(rightWord)
+            }
+        }
+
         
-           }
-        } else if(upTrue && downTrue){
+        if(upTrue && downTrue){
+            conJoinFactory = conjoinWords(x,y,"vertical")
             if(validateWord(conJoinFactory.conjoinedWord)){
                 upValid = true
                 downValid = true
@@ -244,14 +262,14 @@ function playTile(player,tileIndex,x,y){
                 currentWords.push(conJoinedWord)
             }
                 
-        }  if (downTrue){
+        } else if (downTrue){
             downWord = wordFactory(x,y,"down").word
         
                 if (validateWord(downWord)){
                     currentWords.push(downWord)
                     downValid = true
                 } 
-        }  if(upTrue){
+        }else  if(upTrue){
 
                 upWord = wordFactory(x,y,"up").word
                 if (validateWord(reverseString(upWord))){
@@ -259,21 +277,6 @@ function playTile(player,tileIndex,x,y){
                     upWord = reverseString(upWord)
                     currentWords.push(upWord)
                 } 
-        }  if(leftTrue){
-
-                leftWord = wordFactory(x,y,"left").word
-                if(validateWord(reverseString(leftWord))){
-                leftValid = true
-                leftWord = reverseString(leftWord)
-                currentWords.push(leftWord)
-            }
-        } if (rightTrue){
-
-                rightWord = wordFactory(x,y,"right").word
-                if(validateWord((rightWord))){
-                rightValid = true
-                currentWords.push(rightWord)
-                }
         }
 
         valid = upValid || downValid || leftValid || rightValid
@@ -497,10 +500,9 @@ submitButton.addEventListener('click',()=>{
 
     if(valid === true){
 
-        // for(let i = 0; i < currentWords.length;i++){
-
-        // }
-        submitWord(playedWord)
+        for(let i = 0; i < currentWords.length;i++){
+            submitWord(currentWords[i])
+        }   
         nextTurn()
     }
     
@@ -677,16 +679,16 @@ function drawValidBorder(column,row,word,direction){
     for(let i = 0; i < word.length-2; i++){
 
         if(direction === "up"){
-            row--
+            row -= 1
             tile[((row)*15)+column].classList.add('validWordLeft')
             tile[((row)*15)+column].classList.add('validWordRight')
 
         } else if (direction === "down") {
+            row++
             tile[((row)*15)+column].classList.add('validWordLeft')
             tile[((row)*15)+column].classList.add('validWordRight')
-            row++
         } else if(direction === "left"){
-            column--
+            column -= 1
             tile[((row)*15)+column].classList.add('validWordTop')
             tile[((row)*15)+column].classList.add('validWordBottom')
 
@@ -697,7 +699,7 @@ function drawValidBorder(column,row,word,direction){
     }
 
     if(direction === "up"){
-        row--
+        row -= 1
         tile[((row)*15)+column].classList.add('validWordTop')
         tile[((row)*15)+column].classList.add('validWordLeft')
         tile[((row)*15)+column].classList.add('validWordRight')
@@ -709,7 +711,7 @@ function drawValidBorder(column,row,word,direction){
         tile[((row)*15)+column].classList.add('validWordRight')
 
     } else if(direction === "left"){
-        column--
+        column -= 1
         tile[((row)*15)+column].classList.add('validWordLeft')
         tile[((row)*15)+column].classList.add('validWordTop')
         tile[((row)*15)+column].classList.add('validWordBottom')
