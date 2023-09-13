@@ -1,10 +1,17 @@
-const gameBoardArray = []
-let turn = 0 
+const socket = io('http://localhost:3000'); 
+let clientID
+
+let gameBoardArray = []
+let turn = false 
 let lettersPlayed = 0
 let lastCoord = []
 let valid = false
 let lastRow
 let lastColumn
+let emptyBag = false
+
+let playerNumber
+
 
 //prevHand is the hand of letters the current player had at the beginning of their current turn 
 let prevHand
@@ -18,7 +25,7 @@ let playedWord = []
 //currentWords is an array of words currently being played
 let currentWords = []
 
-const player1 = {
+const player = {
 
     score : 0,
     hand : ["","","","","","",""],
@@ -26,12 +33,7 @@ const player1 = {
 
 }
 
-const player2 = {
 
-    score : 0,
-    hand : ["","","","","","",""],
-
-}
 
 const wordFactory = (column,row,direction) => {
 
@@ -60,7 +62,6 @@ const wordFactory = (column,row,direction) => {
     return {word}
 }
 
-let currentPlayer = player1
 
 function tile (letter,pointValue,row,column){
 
@@ -102,69 +103,59 @@ const letterValues = new Map([
     ['z', 10]
   ]);
 
-const letterOccurrences = new Map([
-    ['a', 9],
-    ['b', 2],
-    ['c', 2],
-    ['d', 4],
-    ['e', 12],
-    ['f', 2],
-    ['g', 3],
-    ['h', 2],
-    ['i', 9],
-    ['j', 1],
-    ['k', 1],
-    ['l', 4],
-    ['m', 2],
-    ['n', 6],
-    ['o', 8],
-    ['p', 2],
-    ['q', 1],
-    ['r', 6],
-    ['s', 4],
-    ['t', 6],
-    ['u', 4],
-    ['v', 2],
-    ['w', 2],
-    ['x', 1],
-    ['y', 2],
-    ['z', 1]
-  ]);
+// const letterOccurrences = new Map([
+//     ['a', 9],
+//     ['b', 2],
+//     ['c', 2],
+//     ['d', 4],
+//     ['e', 12],
+//     ['f', 2],
+//     ['g', 3],
+//     ['h', 2],
+//     ['i', 9],
+//     ['j', 1],
+//     ['k', 1],
+//     ['l', 4],
+//     ['m', 2],
+//     ['n', 6],
+//     ['o', 8],
+//     ['p', 2],
+//     ['q', 1],
+//     ['r', 6],
+//     ['s', 4],
+//     ['t', 6],
+//     ['u', 4],
+//     ['v', 2],
+//     ['w', 2],
+//     ['x', 1],
+//     ['y', 2],
+//     ['z', 1]
+//   ]);
 
 
-const keysArray = Array.from(letterOccurrences.keys());
+// const keysArray = Array.from(letterOccurrences.keys());
 
 
 //Adds a letter to the player.hand array at a specified index
-function addLetterToHand(player,index,tile){
-    if(lettersPlayed >= 100){
-        return
-    }
+// function addLetterToHand(player,index,tile){
+//     if(lettersPlayed >= 100){
+//         return
+//     }
 
-    if(letterOccurrences.get(tile.letter) > 0){
-        letterOccurrences.set(tile.letter,letterOccurrences.get(tile.letter)-1)
-        player.hand[index] = tile
-    }
+//     if(letterOccurrences.get(tile.letter) > 0){
+//         letterOccurrences.set(tile.letter,letterOccurrences.get(tile.letter)-1)
+//         player.hand[index] = tile
+//     }
 
-}
+// }
 
 
 
 
 //Fills in all the gaps in a players hand and decrements letter occurrences accordingly
-function populateHand(player){
-    for(let i = 0; i < 7; i++ ){
+function populateHand(hand,player){
 
-        while(player.hand[i] === ""){
-            let x = Math.floor(Math.random()*26)
-            let newTile = new tile(keysArray[x],letterValues.get(keysArray[x]),-1,-1)
-            
-
-            addLetterToHand(player,i,newTile)
-        }
-        
-    }
-
+    player.hand = hand
 
     prevHand = [...player.hand]
 
@@ -187,6 +178,8 @@ for(let i = 0;i < 15;i++){
     }
 
 }
+
+
 
 function playTile(player,tileIndex,x,y){
 
@@ -228,22 +221,35 @@ function playTile(player,tileIndex,x,y){
         let conJoinFactory
 
         if(leftTrue && rightTrue){
-            conJoinFactory = conjoinWords(x,y,"horizontal")
+           
+            
+
            if (validateWord(conJoinFactory.conjoinedWord)){
-                leftValid = true
-                rightValid = true
-                conJoinedWord = conJoinFactory.conjoinedWord
-                currentWords.push(conJoinedWord)      
-            } 
+            leftValid = true
+            rightValid = true
+            conJoinedWord = conJoinFactory.conjoinedWord
+            currentWords.push(conJoinedWord)   
+
+           }
+        
+                 
+
+
          } else  if(leftTrue){
+                  
+
+
+            
 
             leftWord = wordFactory(x,y,"left").word
-            if(validateWord(reverseString(leftWord))){
-            leftValid = true
             leftWord = reverseString(leftWord)
+            if(validateWord(leftWord)){
+            leftValid = true
             currentWords.push(leftWord)
             }
-        }   else if (rightTrue){
+
+            } else if (rightTrue){
+
 
             rightWord = wordFactory(x,y,"right").word
             if(validateWord((rightWord))){
@@ -251,9 +257,12 @@ function playTile(player,tileIndex,x,y){
             currentWords.push(rightWord)
             }
         }
+    
 
         
         if(upTrue && downTrue){
+
+
             conJoinFactory = conjoinWords(x,y,"vertical")
             if(validateWord(conJoinFactory.conjoinedWord)){
                 upValid = true
@@ -263,6 +272,8 @@ function playTile(player,tileIndex,x,y){
             }
                 
         } else if (downTrue){
+
+
             downWord = wordFactory(x,y,"down").word
         
                 if (validateWord(downWord)){
@@ -270,6 +281,7 @@ function playTile(player,tileIndex,x,y){
                     downValid = true
                 } 
         }else  if(upTrue){
+
 
                 upWord = wordFactory(x,y,"up").word
                 if (validateWord(reverseString(upWord))){
@@ -279,7 +291,7 @@ function playTile(player,tileIndex,x,y){
                 } 
         }
 
-        valid = upValid || downValid || leftValid || rightValid
+        valid = upValid || downValid || leftValid || rightValid || leftValid
 
         if(leftValid && rightValid){
             drawValidBorder(conJoinFactory.column,conJoinFactory.row,conJoinedWord,"right")
@@ -335,33 +347,21 @@ function playTile(player,tileIndex,x,y){
             }
         }
 
-    
+    }
         player.hand[tileIndex] = ""
             
     
+        lettersPlayed += 1
 
 
     }
 
     
 
-    lettersPlayed += 1
-}
 
 
-let wordsArray
-fetch('dictionary.txt')
-  .then(response => response.text())
-  .then(data => {
-    wordsArray = data.split('\n');
-    console.log(wordsArray);
-  })
-  .catch(error => {
-    console.error('Error:', error);
-  });
 
 
-populateHand(player1)
 
 
 
@@ -401,16 +401,53 @@ function drawBoard(){
                 
                 const playIndex = e.dataTransfer.getData('text/plain');
 
+                let letter = player.hand[ parseInt(playIndex)].letter
 
-                playTile(currentPlayer,playIndex,row,column)
-                drawHand(currentPlayer)
-                addToBoard(row,column)
+                if(turn === true){
+
+
+
+                    playTile(player,playIndex,row,column)
+    
+                    drawHand(player)
+                    addToBoard(row,column)
+
+                    socket.emit('tile played',clientID,row,column, letter)
+
+
+
+                }
+
+                
 
             })
+
+                boardDiv.appendChild(tile)
+            
     
-            boardDiv.appendChild(tile)
         }
     }
+}
+
+
+function upDateBoard(){
+
+    for(let i = 0; i < gameBoardArray.length;i++){
+
+        for(let j = 0; j < gameBoardArray[i].length; j++){
+    
+            let tile = document.querySelector('[data-row="'+i+'"][data-column="'+j+'"]');
+            
+            if(gameBoardArray[i][j] != ""){
+
+                addToBoard(i,j)
+                
+            }
+    
+        }
+    }
+
+
 }
 
 
@@ -456,6 +493,21 @@ function addToBoard(row,column){
   
 }
 
+
+function addOtherPlayersTileToBoard(row,column,letter){
+    const tile = document.querySelector('[data-row="'+row+'"][data-column="'+column+'"]');
+    
+    if(!tile.classList.contains('occupiedTile') && !tile.classList.contains('highlighted')){
+        let addedTile = document.createElement('div')
+        addedTile.classList.add('highlighted')
+        addedTile.innerText = letter
+    
+        tile.appendChild(addedTile)
+    }
+    
+
+}
+
 function removeFromBoard(row,column){
     const tile = document.querySelector('[data-row="'+row+'"][data-column="'+column+'"]');
 
@@ -476,34 +528,44 @@ function getWordPointValue(word){
 }
 
 function submitWord(word){
-    
-    currentPlayer.score += getWordPointValue(word)
-    if(currentPlayer === player1){
-        let scoreDisplay = document.querySelector(`.player1-score`)
-        scoreDisplay.innerHTML = `Player1: ${currentPlayer.score}`
 
+
+    player.score += getWordPointValue(word)
+
+    if(playerNumber == 1){
+        player1Score.innerHTML = `Player1: ${player.score}` 
     } else {
-        let scoreDisplay = document.querySelector(`.player2-score`)
-        scoreDisplay.innerHTML = `Player2: ${currentPlayer.score}`
+        player2Score.innerHTML = `Player2: ${player.score}` 
     }
 
+
+ 
 }
 
 
 
 
-const submitButton = document.querySelector('button')
+const submitButton = document.querySelector('.play-button')
+
 submitButton.addEventListener('click',()=>{
     
 
+    
 
-
-    if(valid === true){
+    if(valid && turn){
 
         for(let i = 0; i < currentWords.length;i++){
             submitWord(currentWords[i])
         }   
         nextTurn()
+
+
+        if(emptyBag){
+            socket.emit('empty hand',clientID)
+        }
+
+
+
     }
     
 })
@@ -518,48 +580,81 @@ function recallLetters(){
     currentWords = []
 
     for (i in currentPlay){
-        currentPlayer.hand[i] = currentPlay[i]
-        removeFromBoard(currentPlayer.hand[i].column,currentPlayer.hand[i].row)
+        player.hand[i] = currentPlay[i]
+        removeFromBoard(player.hand[i].column,player.hand[i].row)
 
     }
     eraseValidBorder()
     currentPlay = Array(7)
-    drawHand(currentPlayer)
+    drawHand(player)
+
+
+    socket.emit('recall',clientID)
 }
 
 
 
 
-function nextTurn(){
+async function nextTurn(){
 
     currentWords = []
 
 
     eraseValidBorder()
-    if(currentPlayer === player1){
-        currentPlayer = player2
-    } else {
-        currentPlayer = player1 
-    }
 
+    turn = !turn
 
+    const response = await updateServer(clientID,player.score,gameBoardArray,player.hand)
+
+    player.hand = response.body
 
     currentPlay = Array(7)
     playedWord = []
-    populateHand(currentPlayer)
-    drawHand(currentPlayer)
+
+    drawHand(player)
+}
+
+async function updateServer(clientID,score,gameBoardArray,hand){
+
+    //fetch request to server
+
+    const data = {
+
+        clientID: clientID,
+        score: score,
+        gameBoardArray: gameBoardArray,
+        hand: hand
+
+    }
+
+    const jsonData = JSON.stringify(data)
+
+    const response = await fetch('/update', {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+          },
+        body: jsonData
+    })
+
+    const newHand = await response.json()
+
+
+    return newHand
 }
 
 
 
-function validateWord(word){
 
-    if(wordsArray.includes(word.toUpperCase())){
+function validateWord(word) {
+
+    if(dictionary.includes(word.toUpperCase())){
         return true
     }
-    return false
-
+    
 }
+
+
  
 function adjacentUp(tile){
 
@@ -757,8 +852,150 @@ function eraseRedundantBorder(column,row,direction){
 
 }
 
+// Get references to the modal and button elements
+const createGameButton = document.querySelector('.createGameButton')
+const joinGameButton = document.querySelector('.joinGameButton')
+const roomIDInput = document.querySelector('.roomIDInput')
+const modal = document.querySelector('.modal')
+const player1Score = document.querySelector('.player1-score')
+const player2Score = document.querySelector('.player2-score')
+
+
+ clientID = generateID()
+
+createGameButton.addEventListener('click',()=>{
+    socket.emit('room create request',(clientID))
+
+    
+})
+
+joinGameButton.addEventListener('click',()=>{
+    let IDinput = parseInt(roomIDInput.value)
+
+    //check if its trying to join its own room
+    if(clientID === IDinput){
+        console.log('enter a valid ID')
+    } else {
+        socket.emit('room join request',IDinput,clientID)
+    }
+
+
+    
+})
+
+socket.on('room joined',()=>{
+    modal.style.display = 'none'
+})
+
+socket.on('other player tile',(x,y,letter)=>{
+    
+    addOtherPlayersTileToBoard(x,y,letter)
+})
+
+socket.on('populate hand', (hand)=>{
+
+    populateHand(hand,player)
+})
+
+socket.on('other player recall',()=>{
+    otherPlayerRecall()
+})
+
+socket.on('change turn',(board,newScore,emptyBag)=>{
+    turn = !turn
+
+    if(playerNumber == 1){
+        player2Score.innerHTML = `Player2: ${newScore}` 
+    } else {
+        player1Score.innerHTML = `Player1: ${newScore}` 
+    }
+
+    otherPlayerRecall()
+
+    gameBoardArray = board
+
+    upDateBoard()
+
+})
+
+socket.on('bag empty', ()=>{
+    emptyBag = true
+})
+
+socket.on('end game',()=>{
+    alert('game end')
+})
+
+
+
+
+function otherPlayerRecall(){
+    for(let i = 0; i < gameBoardArray.length;i++){
+
+        for(let j = 0; j < gameBoardArray[i].length; j++){
+
+            const tile = document.querySelector('[data-row="'+i+'"][data-column="'+j+'"]');
+
+             if(tile.firstChild){
+                removeFromBoard(i,j)
+             }
+
+        }
+    }
+}
+
+
+function generateID(){
+
+    return Math.floor(Math.random() * 10000)
+  
+  }
+
+
+
+
+
 
 /////HTML stuff/////
-drawBoard()
-populateHand(currentPlayer)
-drawHand(currentPlayer)
+
+
+
+socket.on('begin game', (currentTurn,playerNo)=>{
+    
+    playerNumber = playerNo
+
+    turn = currentTurn
+
+    drawBoard()
+    drawHand(player)
+
+
+})
+
+
+let dictionary
+
+fetch('/data.txt') 
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.text();
+      })
+      .then(text => {
+        // Handle the content of the text file
+        dictionary = text
+         dictionary = dictionary.split('\n');
+
+
+      })
+      .catch(error => {
+        console.error('Error fetching text file:', error);
+      });
+
+
+
+
+
+
+
