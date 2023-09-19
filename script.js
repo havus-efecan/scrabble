@@ -9,6 +9,8 @@ let valid = false
 let lastRow
 let lastColumn
 let emptyBag = false
+let justPassed = false
+let gameEnded = false
 
 let playerNumber
 
@@ -295,52 +297,61 @@ function playTile(player,tileIndex,x,y){
 
         if(leftValid && rightValid){
             drawValidBorder(conJoinFactory.column,conJoinFactory.row,conJoinedWord,"right")
-        } else if(upValid && downValid){
+        } 
+         if(upValid && downValid){
             drawValidBorder(conJoinFactory.column,conJoinFactory.row,conJoinedWord,"down")
-        } else if(leftValid && upValid){
+        } 
+         if(leftValid && upValid){
             drawValidBorder(x,y,leftWord,"left")
             drawValidBorder(x,y,upWord,"up")
             eraseRedundantBorder(x,y,"left")
             eraseRedundantBorder(x,y,"top")
-        } else if(rightValid && upValid){
+        }  
+        if(rightValid && upValid){
             drawValidBorder(x,y,rightWord,"right")
             drawValidBorder(x,y,upWord,"up")
             eraseRedundantBorder(x,y,"right")
             eraseRedundantBorder(x,y,"top")
-        } else if(leftValid && downValid){
+        }  
+        if(leftValid && downValid){
             drawValidBorder(x,y,leftWord,"left")
             drawValidBorder(x,y,downValid,"down")
             eraseRedundantBorder(x,y,"left")
             eraseRedundantBorder(x,y,"bottom")
-        } else if(rightValid && downValid){
+        }  
+        if(rightValid && downValid){
             drawValidBorder(x,y,rightValid,"right")
             drawValidBorder(x,y,downValid,"down")
             eraseRedundantBorder(x,y,"right")
             eraseRedundantBorder(x,y,"bottom")
-        } else if(leftValid){
+        }  
+        if(leftValid){
             if(rightTrue || downTrue || upTrue){
-                valid = false
+                valid = true
                 return
             } else {
                 drawValidBorder(x,y,leftWord,"left")
             }
-        }else if(rightValid){
+        } 
+        if(rightValid){
             if(leftTrue || downTrue || upTrue){
-                valid = false
+                valid = true
                 return
             } else {
                 drawValidBorder(x,y,rightWord,"right")
             }
-        }   else if(upValid){
+        }   
+         if(upValid){
             if(leftTrue || rightTrue || downTrue){
-                valid = false
+                valid = true
                 return
                 } else {
                 drawValidBorder(x,y,upWord,"up")
             }
-        }else if(downValid){
+        } 
+        if(downValid){
             if(leftTrue || rightTrue || upTrue){
-                valid = false
+                valid = true
                 return
                 } else {
                 drawValidBorder(x,y,downWord,"down")
@@ -557,6 +568,9 @@ submitButton.addEventListener('click',()=>{
         for(let i = 0; i < currentWords.length;i++){
             submitWord(currentWords[i])
         }   
+
+        
+
         nextTurn()
 
 
@@ -592,13 +606,36 @@ function recallLetters(){
     socket.emit('recall',clientID)
 }
 
+const passButton = document.querySelector('.pass-button')
+
+passButton.addEventListener('click',()=>{
+
+    justPassed = true
+    
+    socket.emit('pass',(clientID))
+
+
+    if(!gameEnded){
+        nextTurn()
+
+    }
+
+    
+})
+
 
 
 
 async function nextTurn(){
 
     currentWords = []
+    
+    if(playerNumber == 1){
+            turnIndicator.innerText = 'Player 2s turn'
+    } else {
+        turnIndicator.innerText = 'Player 1s turn'
 
+    }
 
     eraseValidBorder()
 
@@ -859,6 +896,8 @@ const roomIDInput = document.querySelector('.roomIDInput')
 const modal = document.querySelector('.modal')
 const player1Score = document.querySelector('.player1-score')
 const player2Score = document.querySelector('.player2-score')
+const turnIndicator = document.querySelector('.turn')
+
 
 
  clientID = generateID()
@@ -872,13 +911,24 @@ createGameButton.addEventListener('click',()=>{
 joinGameButton.addEventListener('click',()=>{
     let IDinput = parseInt(roomIDInput.value)
 
+    if(isNaN(IDinput) || IDinput == ''){
+        roomIDInput.value =''
+
+        roomIDInput.placeholder = 'Enter a valid room ID'
+    } 
+
+
     //check if its trying to join its own room
     if(clientID === IDinput){
-        console.log('enter a valid ID')
+        roomIDInput.value =''
+
+        roomIDInput.placeholder = 'Enter a valid room ID'
     } else {
         socket.emit('room join request',IDinput,clientID)
     }
 
+    roomIDInput.value =''
+    roomIDInput.placeholder = 'Room not found'
 
     
 })
@@ -902,19 +952,36 @@ socket.on('other player recall',()=>{
 })
 
 socket.on('change turn',(board,newScore,emptyBag)=>{
-    turn = !turn
 
-    if(playerNumber == 1){
-        player2Score.innerHTML = `Player2: ${newScore}` 
-    } else {
-        player1Score.innerHTML = `Player1: ${newScore}` 
+
+    if(!gameEnded){
+
+        if(playerNumber == 2){
+            turnIndicator.innerText = 'Player 2s turn'
+        } else {
+        turnIndicator.innerText = 'Player 1s turn'
+    
+        }
+    
+        turn = !turn
+    
+        if(playerNumber == 1){
+            player2Score.innerHTML = `Player2: ${newScore}` 
+        } else {
+            player1Score.innerHTML = `Player1: ${newScore}` 
+        }
+    
+        otherPlayerRecall()
+    
+        gameBoardArray = board
+    
+        upDateBoard()
+
+
+
     }
-
-    otherPlayerRecall()
-
-    gameBoardArray = board
-
-    upDateBoard()
+    
+    
 
 })
 
@@ -922,8 +989,14 @@ socket.on('bag empty', ()=>{
     emptyBag = true
 })
 
-socket.on('end game',()=>{
-    alert('game end')
+socket.on('end game',(message)=>{
+
+    turn = false
+
+    gameEnded = true
+
+    turnIndicator.innerText = message
+
 })
 
 

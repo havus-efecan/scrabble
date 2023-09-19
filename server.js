@@ -25,6 +25,7 @@ app.get('/data.txt', (req, res) => {
   res.sendFile(path.join(__dirname, 'dictionary.txt'));
 });
 
+
 app.post('/update',(req,res)=>{
 
   let data = req.body
@@ -276,6 +277,35 @@ io.on('connection',(socket)=>{
 
   })
 
+  socket.on('pass',(clientID)=>{
+    
+    let message
+
+
+
+    let playingClient = clients.get(clientID)
+    let nonPlayingClient = playingClient.room.notTurn
+    let room = playingClient.room 
+
+    if(nonPlayingClient.justPassed == true){
+
+
+      if(room.player1.score > room.player2.score){
+        message = `player 1 wins with ${room.player1.score} points`
+      } else{
+        message = `player 2 wins with ${room.player2.score} points`
+      }
+      
+      playingClient.room.hostSocket.emit('end game', message)
+      nonPlayingClient.room.joiningSocket.emit('end game', message)
+
+    }
+
+    playingClient.justPassed = true
+
+
+  })
+
 
 
 })
@@ -339,6 +369,9 @@ function initializeGame(room,socket1,socket2){
 
   room.currentTurn = room.player1
   room.notTurn = room.player2
+
+  player1.justPassed = false
+  player2.justPassed = false
 
 
   room.remainingLetters = new Map([
