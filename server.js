@@ -343,7 +343,8 @@ function player(ID,room, score, hand,socket){
 
 function generateID(){
 
-  return Math.floor(Math.random() * 10000)
+  return Math.floor(Math.random() * 9000000000) + 1000000000;
+
 
 }
 

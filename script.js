@@ -894,6 +894,8 @@ const createGameButton = document.querySelector('.createGameButton')
 const joinGameButton = document.querySelector('.joinGameButton')
 const roomIDInput = document.querySelector('.roomIDInput')
 const modal = document.querySelector('.modal')
+const modalContent = document.querySelector('.modal-content')
+
 const player1Score = document.querySelector('.player1-score')
 const player2Score = document.querySelector('.player2-score')
 const turnIndicator = document.querySelector('.turn')
@@ -903,6 +905,18 @@ const turnIndicator = document.querySelector('.turn')
  clientID = generateID()
 
 createGameButton.addEventListener('click',()=>{
+
+    modalContent.innerHTML = ''
+
+    let roomID = document.createElement('div')
+    roomID.classList.add('roomID')
+
+    modalContent.append(roomID)
+
+
+
+    roomID.innerText = `Room ID: ${clientID}` 
+
     socket.emit('room create request',(clientID))
 
     
@@ -1020,7 +1034,8 @@ function otherPlayerRecall(){
 
 function generateID(){
 
-    return Math.floor(Math.random() * 10000)
+    return Math.floor(Math.random() * 9000000000) + 1000000000;
+
   
   }
 
