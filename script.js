@@ -1,4 +1,4 @@
-const socket = io('https://desolate-wildwood-68412-29d0cf041e23.herokuapp.com/'); 
+const socket = io('http://localhost:3000/'); 
 let clientID
 
 let gameBoardArray = []
@@ -618,7 +618,10 @@ const passButton = document.querySelector('.pass-button')
 
 passButton.addEventListener('click',()=>{
 
-    justPassed = true
+
+    if(turn == true){
+
+        justPassed = true
     
     socket.emit('pass',(clientID))
 
@@ -627,6 +630,10 @@ passButton.addEventListener('click',()=>{
         nextTurn()
 
     }
+
+    }
+
+    
 
     
 })
@@ -637,17 +644,19 @@ passButton.addEventListener('click',()=>{
 async function nextTurn(){
 
     currentWords = []
+
+    turn = !turn
+
     
-    if(playerNumber == 1){
-            turnIndicator.innerText = 'Other players turn'
+    if(turn){
+            turnIndicator.innerText = 'Your turn'
     } else {
-        turnIndicator.innerText = 'Your turn'
+        turnIndicator.innerText = 'Other players turn'
 
     }
 
     eraseValidBorder()
 
-    turn = !turn
 
     const response = await updateServer(clientID,player.score,gameBoardArray,player.hand)
 
@@ -975,17 +984,17 @@ socket.on('other player recall',()=>{
 
 socket.on('change turn',(board,newScore,emptyBag)=>{
 
+    turn = !turn
 
     if(!gameEnded){
 
-        if(playerNumber == 2){
+        if(turn){
             turnIndicator.innerText = 'Your turn'
         } else {
         turnIndicator.innerText = 'Other players turn'
     
         }
     
-        turn = !turn
     
         if(playerNumber == 1){
             player2Score.innerHTML = `Player2: ${newScore}` 
