@@ -1,4 +1,4 @@
-const socket = io('http://localhost:3000/'); 
+const socket = io('https://desolate-wildwood-68412-29d0cf041e23.herokuapp.com/'); 
 let clientID
 
 let gameBoardArray = []
