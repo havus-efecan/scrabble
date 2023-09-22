@@ -1,4 +1,4 @@
-const socket = io('https://desolate-wildwood-68412-29d0cf041e23.herokuapp.com/'); 
+const socket = io('http://localhost:3000'); 
 let clientID
 
 let gameBoardArray = []
@@ -633,7 +633,7 @@ async function nextTurn(){
     if(playerNumber == 1){
             turnIndicator.innerText = 'Player 2s turn'
     } else {
-        turnIndicator.innerText = 'Player 1s turn'
+        turnIndicator.innerText = 'Your turn'
 
     }
 
@@ -971,7 +971,7 @@ socket.on('change turn',(board,newScore,emptyBag)=>{
     if(!gameEnded){
 
         if(playerNumber == 2){
-            turnIndicator.innerText = 'Player 2s turn'
+            turnIndicator.innerText = 'Your turn'
         } else {
         turnIndicator.innerText = 'Player 1s turn'
     
@@ -1056,6 +1056,12 @@ socket.on('begin game', (currentTurn,playerNo)=>{
 
     drawBoard()
     drawHand(player)
+
+    if(playerNumber == 1){
+        turnIndicator.innerText = 'Your turn'
+    } else {
+        turnIndicator.innerText = 'Other players turn'
+    }
 
 
 })
