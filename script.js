@@ -1,4 +1,4 @@
-const socket = io('https://desolate-wildwood-68412-29d0cf041e23.herokuapp.com/'); 
+const socket = io('http://localhost:3000/'); 
 let clientID
 
 let gameBoardArray = []
@@ -409,29 +409,33 @@ function drawBoard(){
             })
             tile.addEventListener('drop', (e)=>{
                 e.preventDefault()
-                tile.classList.remove('drag-over')
 
-                let row = e.target.dataset.row
-                let column = e.target.dataset.column
-                
-                const playIndex = e.dataTransfer.getData('text/plain');
+                if(!tile.hasChildNodes()){
+                    tile.classList.remove('drag-over')
 
-                let letter = player.hand[ parseInt(playIndex)].letter
-
-                if(turn === true){
-
-
-
-                    playTile(player,playIndex,row,column)
+                    let row = e.target.dataset.row
+                    let column = e.target.dataset.column
+                    
+                    const playIndex = e.dataTransfer.getData('text/plain');
     
-                    drawHand(player)
-                    addToBoard(row,column)
-
-                    socket.emit('tile played',clientID,row,column, letter)
-
-
-
+                    let letter = player.hand[ parseInt(playIndex)].letter
+    
+                    if(turn === true){
+    
+    
+    
+                        playTile(player,playIndex,row,column)
+        
+                        drawHand(player)
+                        addToBoard(row,column)
+    
+                        socket.emit('tile played',clientID,row,column, letter)
+    
+    
+    
+                    }
                 }
+                
 
                 
 
@@ -635,7 +639,7 @@ async function nextTurn(){
     currentWords = []
     
     if(playerNumber == 1){
-            turnIndicator.innerText = 'Player 2s turn'
+            turnIndicator.innerText = 'Other players turn'
     } else {
         turnIndicator.innerText = 'Your turn'
 
